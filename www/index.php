@@ -43,8 +43,8 @@ class logic {
 		}
 		foreach ($results['graph_labels'] as $dt) {
 			if (!isset($results['group_defenses_n'][$dt])) $results['group_defenses_n'][$dt] = 0;
-			if (!isset($results['defenses_n'][$dt])) $results['group_defenses_n'][$dt] = 0;
-			if (!isset($results['attacks_n'][$dt])) $results['group_defenses_n'][$dt] = 0;
+			if (!isset($results['defenses_n'][$dt])) $results['defenses_n'][$dt] = 0;
+			if (!isset($results['attacks_n'][$dt])) $results['attacks_n'][$dt] = 0;
 		}
 		
 		ksort($results['group_defenses_n']);
