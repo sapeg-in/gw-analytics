@@ -173,17 +173,24 @@ class logic {
 
 
 
-
-		$res = $this->mysql->query("SELECT COUNT(*) as n, who, name, DATE(cdate) as dt FROM `syndicate_log` as sl INNER JOIN syndicate_members as sm ON (sm.id = sl.who)  WHERE type = 'attack' AND DATE(cdate) = DATE(NOW()) GROUP BY who ORDER BY n DESC, who LIMIT 10");
-		$results['attackers_today'] = [];
-		while ($row = $this->mysql->fetch($res)) {
-			$results['attackers_today'][] = $row;
+		$results['last3_dates'] = [];
+		for($i = 0; $i <= 2; $i++){
+			$results['last3_dates'][] = date("Y-m-d", time()-86400*$i);
 		}
 
-		$res = $this->mysql->query("SELECT COUNT(*) as n, who, name, DATE(cdate) as dt FROM `syndicate_log` as sl INNER JOIN syndicate_members as sm ON (sm.id = sl.who) WHERE type = 'attack' AND DATE(cdate) = DATE(NOW()-INTERVAL 1 DAY) GROUP BY who ORDER BY n DESC, who LIMIT 10");
-		$results['attackers_yesterday'] = [];
-		while ($row = $this->mysql->fetch($res)) {
-			$results['attackers_yesterday'][] = $row;
+		$results['attackers'] = [];
+		foreach ($results['last3_dates'] as $dt) {
+			$res = $this->mysql->query("SELECT COUNT(*) as n, who, name, DATE(cdate) as dt FROM `syndicate_log` as sl INNER JOIN syndicate_members as sm ON (sm.id = sl.who) WHERE sl.type = 'attack' AND DATE(sl.cdate) = '{$dt}' GROUP BY who ORDER BY n DESC, who LIMIT 10");
+			$results['attackers'][$dt] = [];
+			while ($row = $this->mysql->fetch($res)) {
+
+				$res2 = $this->mysql->query("SELECT COUNT(*) FROM syndicate_warlog WHERE `init` = {$row['who']} AND DATE(cdate) = '{$dt}' AND win = 0 AND type = 'attack'");
+				$fail = $this->mysql->result($res2, 0);
+				$row['fail'] = $fail;
+				$success = $row['n']-$fail;
+				$row['percent'] = intval($success*100/$row['n']);
+				$results['attackers'][$dt][] = $row;
+			}
 		}
 
 
@@ -210,6 +217,17 @@ class logic {
 			while ($row = $this->mysql->fetch($res)) {
 				$results['pts_exp'][$dt][] = $row;
 			}
+
+			$res = $this->mysql->query("SELECT smw.member_id, COUNT(*) as n, sm.name FROM syndicate_members_war as smw INNER JOIN syndicate_warlog as sw ON (sw.war_id = smw.war_id) INNER JOIN syndicate_members as sm ON (sm.id = smw.member_id) WHERE DATE(sw.cdate) = '{$dt}' GROUP BY smw.member_id ORDER BY n DESC LIMIT 50");
+			$results['warlog_members'][$dt] = [];
+			while ($row = $this->mysql->fetch($res)) {
+				$results['warlog_members'][$dt][] = $row;
+			}
+
+			$res = $this->mysql->query("SELECT COUNT(*) FROM syndicate_warlog as sw WHERE DATE(sw.cdate) = '{$dt}'");
+			$results['warlog_count'][$dt] = $this->mysql->result($res, 0);
+
+
 		}
 
 		// prr($results, 1);
@@ -575,6 +593,7 @@ $logic->site();
 				<div class="col-md-8">
 					<canvas id="attacks" style="height: 500; width: 500px;"></canvas>
 				</div>
+				<!--
 				<div class="col-md-2">
 					<p>ТОП 10 атакующих сегодня</p>
 					<table class="table">
@@ -621,7 +640,89 @@ $logic->site();
 					</tbody>
 					</table>
 				</div>
+				-->
 			</div>
+
+			<div class="row">
+				<h2 style="text-align: center;">Атакующие за 3 дня</h2>
+				<br /><br />
+				<?php
+					foreach($results['last3_dates'] as $dt){
+				?>
+					<div class="col-md-4">
+						<p style="text-align: center;"><b><?=$dt?></b></p>
+						<table class="table">
+							<thead>
+								<tr>
+								<th>Атак</th>
+								<th>Пораж.</th>
+								<th>Успех</th>
+								<th>Ник</th>
+								</tr>
+							</thead>
+						<tbody>
+							<?php
+								foreach($results['attackers'][$dt] as $i => $row){
+							?>
+									<tr>
+									<th><?=$row['n']?></th>
+									<th><?=$row['fail']?></th>
+									<th><?=$row['percent']?>%</th>
+									<th><a href="log.php?id=<?=$row['who']?>" target="_blank"><?=$row['name']?></a></th>
+									</tr>
+							<?php
+								}
+							?>
+						</tbody>
+						</table>
+					</div>
+				<?php
+					}
+				?>
+			</div>
+
+
+
+			<br /><br />
+			<hr />
+			<br /><br />
+			<div class="row">
+				<h2 style="text-align: center;">50 самых активных бойцов за 6 дней</h2>
+				<br /><br />
+				<?php
+					foreach($results['pts_dates'] as $dt){
+				?>
+					<div class="col-md-2">
+						<p style="text-align: center;"><b><?=$dt?> / Всего боёв: <?=$results['warlog_count'][$dt]?></b></p>
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Боёв</th>
+									<th>Ник</th>
+								</tr>
+							</thead>
+						<tbody>
+							<?php
+								foreach($results['warlog_members'][$dt] as $i => $row){
+							?>
+										<tr>
+											<th><?=($i+1)?> / <?=$row['n']?></th>
+											<th><a href="log.php?id=<?=$row['member_id']?>" target="_blank"><?=$row['name']?></a></th>
+										</tr>
+							<?php
+								}
+							?>
+						</tbody>
+						</table>
+					</div>
+				<?php
+					}
+				?>
+			</div>
+
+
+
+
 			<div class="row">
 				<h2 style="text-align: center;">Учет PTS</h2>
 				<br /><br />

@@ -44,8 +44,6 @@ class logic {
 			$json = object_to_array(json_decode($res));
 			if (stristr($json['title'], "Авторизация в игре")){
 				$cmd = "casperjs --ssl-protocol=any --ignore-ssl-errors=true --cookie=\"{$this->CONFIG['cookie']}\" --login=\"{$this->CONFIG['user_login']}\" --password=\"{$this->CONFIG['user_password']}\" {$this->CONFIG['DIR']}/console/auth.js";
-				echo $cmd;
-				n();
 				shell_exec($cmd);
 			}else{
 				// prr($json);
@@ -58,11 +56,18 @@ class logic {
 					$this->mysql->query("INSERT IGNORE INTO syndicate_log (`cdate`, `event`, `md5`) VALUES ('".addslashes($date)."', '".addslashes($row['act'])."', '".md5($row['act'])."')");
 					if (stristr($row['act'], "На контролируемый объект синдиката")){
 						$this->mysql->query("UPDATE syndicate_log SET type = 'defense' WHERE `cdate` = '".addslashes($date)."' AND `md5` = '".md5($row['act'])."'");
+						if (preg_match_all("/\#([0-9]+)\,/i", $row['act'], $m)){
+							$this->mysql->query("UPDATE syndicate_log SET object = '{$m[1][0]}' WHERE `cdate` = '".addslashes($date)."' AND `md5` = '".md5($row['act'])."'");
+						}
 					}
 					if (preg_match_all("/(.+) инициировал нападение на объект/i", $row['act'], $m)){
 						$res = $this->mysql->query("SELECT id FROM syndicate_members WHERE `name` = '".addslashes($m[1][0])."'");
 						$who = $this->mysql->result($res, 0);
 						$this->mysql->query("UPDATE syndicate_log SET type = 'attack', who = '{$who}' WHERE `cdate` = '".addslashes($date)."' AND `md5` = '".md5($row['act'])."'");
+						if (preg_match_all("/\#([0-9]+)\,/i", $row['act'], $m)){
+							$this->mysql->query("UPDATE syndicate_log SET object = '{$m[1][0]}' WHERE `cdate` = '".addslashes($date)."' AND `md5` = '".md5($row['act'])."'");
+						}
+						
 					}
 					if (stristr($row['act'], "На союзный объект синдиката")){
 						$this->mysql->query("UPDATE syndicate_log SET type = 'group_defense' WHERE `cdate` = '".addslashes($date)."' AND `md5` = '".md5($row['act'])."'");
