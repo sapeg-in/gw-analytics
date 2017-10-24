@@ -96,6 +96,70 @@ ALTER TABLE `syndicate_log`
 ALTER TABLE `syndicate_members`
   MODIFY `id` int(10) NOT NULL AUTO_INCREMENT;
 
+-- !!!!!!!!!!!!!!!!!!!!!!!!!!
+-- /////// updated 24.10.2017
+
+
+ALTER TABLE `syndicate_log` ADD `object` INT(10) NOT NULL DEFAULT '0' AFTER `who`;
+
+ALTER TABLE `syndicate_members` CHANGE `id` `id` INT(12) NOT NULL AUTO_INCREMENT;
+
+
+--
+-- Table structure for table `syndicate_members_war`
+--
+
+CREATE TABLE IF NOT EXISTS `syndicate_members_war` (
+  `war_id` bigint(15) NOT NULL,
+  `member_id` int(12) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `syndicate_warlog`
+--
+
+CREATE TABLE IF NOT EXISTS `syndicate_warlog` (
+  `war_id` bigint(15) NOT NULL,
+  `log_id` int(10) NOT NULL COMMENT 'id fro, syndicate_log',
+  `cdate` datetime NOT NULL,
+  `type` enum('attack','defense') NOT NULL,
+  `win` tinyint(1) NOT NULL DEFAULT '0',
+  `init` int(12) NOT NULL,
+  `object` int(10) NOT NULL,
+  `log` longtext NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `syndicate_members_war`
+--
+ALTER TABLE `syndicate_members_war`
+  ADD UNIQUE KEY `war_id` (`war_id`,`member_id`);
+
+--
+-- Indexes for table `syndicate_warlog`
+--
+ALTER TABLE `syndicate_warlog`
+  ADD PRIMARY KEY (`war_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `syndicate_warlog`
+--
+ALTER TABLE `syndicate_warlog`
+  MODIFY `war_id` bigint(15) NOT NULL AUTO_INCREMENT;
+
+
+
+
 ```
 
 
